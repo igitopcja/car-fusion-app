@@ -1,0 +1,161 @@
+const express = require('express');
+const axios = require('axios');
+const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs').promises;
+const path = require('path');
+const FormData = require('form-data');
+const app = express();
+const port = 3000;
+
+require('dotenv').config();
+
+const upload = multer({ dest: 'uploads/' });
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (req, res) => {
+  const car1Path = req.files['car1'][0].path;
+  const car2Path = req.files['car2'][0].path;
+  const car1Name = req.files['car1'][0].originalname.split('.')[0] || 'car1';
+  const car2Name = req.files['car2'][0].originalname.split('.')[0] || 'car2';
+
+  let car1Buffer, car2Buffer, baseBuffer, outputBasePath;
+  try {
+    // Process car1
+    console.log('Processing car1...');
+    const car1Metadata = await sharp(car1Path).metadata();
+    let car1Width = car1Metadata.width;
+    let car1Height = car1Metadata.height;
+    if (car1Width > 1024 || car1Height > 1024) {
+      const scale = Math.min(1024 / car1Width, 1024 / car1Height);
+      car1Width = Math.round(car1Width * scale);
+      car1Height = Math.round(car1Height * scale);
+    } else if (car1Width < 256 || car1Height < 256) {
+      const scale = Math.max(256 / car1Width, 256 / car1Height);
+      car1Width = Math.round(car1Width * scale);
+      car1Height = Math.round(car1Height * scale);
+    }
+    car1Buffer = await sharp(car1Path)
+      .resize(car1Width, car1Height)
+      .toFormat('png', { quality: 80, compressionLevel: 9 })
+      .toBuffer();
+    const car1Size = Buffer.byteLength(car1Buffer);
+    console.log(`Car1 size: ${car1Size} bytes`);
+    if (car1Size > 4 * 1024 * 1024) throw new Error('Car1 too large');
+    const car1Meta = await sharp(car1Buffer).metadata();
+    console.log(`Car1 validated: ${car1Meta.format}, ${car1Meta.width}x${car1Meta.height}`);
+
+    // Process car2
+    console.log('Processing car2...');
+    const car2Metadata = await sharp(car2Path).metadata();
+    let car2Width = car2Metadata.width;
+    let car2Height = car2Metadata.height;
+    if (car2Width > 1024 || car2Height > 1024) {
+      const scale = Math.min(1024 / car2Width, 1024 / car2Height);
+      car2Width = Math.round(car2Width * scale);
+      car2Height = Math.round(car2Height * scale);
+    } else if (car2Width < 256 || car2Height < 256) {
+      const scale = Math.max(256 / car2Width, 256 / car2Height);
+      car2Width = Math.round(car2Width * scale);
+      car2Height = Math.round(car2Height * scale);
+    }
+    car2Buffer = await sharp(car2Path)
+      .resize(car2Width, car2Height)
+      .toFormat('png', { quality: 80, compressionLevel: 9 })
+      .toBuffer();
+    const car2Size = Buffer.byteLength(car2Buffer);
+    console.log(`Car2 size: ${car2Size} bytes`);
+    if (car2Size > 4 * 1024 * 1024) throw new Error('Car2 too large');
+    const car2Meta = await sharp(car2Buffer).metadata();
+    console.log(`Car2 validated: ${car2Meta.format}, ${car2Meta.width}x${car2Meta.height}`);
+
+    // Create composite base image
+    console.log('Creating composite base image...');
+    const baseWidth = 1024;
+    const baseHeight = 1024;
+    baseBuffer = await sharp({
+      create: {
+        width: baseWidth,
+        height: baseHeight,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 }
+      }
+    })
+      .composite([
+        { input: car1Buffer, top: Math.round((baseHeight - car1Meta.height) / 2), left: 
+Math.round((baseWidth - car1Meta.width) / 2) },
+        { input: car2Buffer, top: Math.round((baseHeight - car2Meta.height) / 2), left: 
+Math.round((baseWidth - car2Meta.width) / 2) }
+      ])
+      .toFormat('png', { quality: 80, compressionLevel: 9 })
+      .toBuffer();
+    const baseSize = Buffer.byteLength(baseBuffer);
+    console.log(`Base image size: ${baseSize} bytes`);
+    if (baseSize > 4 * 1024 * 1024) throw new Error('Base image too large');
+    const baseMeta = await sharp(baseBuffer).metadata();
+    console.log(`Base image validated: ${baseMeta.format}, 
+${baseMeta.width}x${baseMeta.height}`);
+
+    // Save base image for debugging
+    outputBasePath = path.join(__dirname, 'uploads', 'base.png');
+    await fs.writeFile(outputBasePath, baseBuffer);
+  } catch (error) {
+    console.error('Preprocessing error:', error.message);
+    await fs.unlink(car1Path).catch(() => {});
+    await fs.unlink(car2Path).catch(() => {});
+    return res.status(400).send(`Preprocessing failed: ${error.message}`);
+  }
+
+  const outputMaskPath = path.join(__dirname, 'uploads', 'mask.png');
+
+  try {
+    // Create empty mask
+    await fs.writeFile(outputMaskPath, Buffer.alloc(1024 * 1024 * 4, 0));
+
+    // Refined prompt for a side view, fully visible car
+    const prompt = `A single, photorealistic car seamlessly fused from unique parts of a 
+${car1Name} and a ${car2Name}, shown from a perfect side profile (front to rear fully visible), 
+perfectly centered and completely framed on a 1024x1024 white background, 
+detailed styling, and a natural, unified design, ensuring the entire car is uncropped with 
+ample space around it.`;
+
+    // Use image generation
+    console.log('Using image generation...');
+    const generationResponse = await axios.post(
+      'https://api.openai.com/v1/images/generations',
+      {
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024'
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    const fusedImage = generationResponse.data.data[0].url;
+
+    await fs.unlink(car1Path).catch(() => {});
+    await fs.unlink(car2Path).catch(() => {});
+    await fs.unlink(outputBasePath).catch(() => {});
+    await fs.unlink(outputMaskPath).catch(() => {});
+
+    res.json({
+      image: fusedImage,
+      description: `Generated fusion of ${car1Name} and ${car2Name} into a single hybrid car, 
+fully visible from the side and centered`
+    });
+  } catch (error) {
+    console.error('Fusion error:', error.response ? error.response.data : error.message);
+    await fs.unlink(car1Path).catch(() => {});
+    await fs.unlink(car2Path).catch(() => {});
+    await fs.unlink(outputBasePath).catch(() => {});
+    await fs.unlink(outputMaskPath).catch(() => {});
+    res.status(500).send('Fusion failed. Check your images or try again.');
+  }
+});
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
