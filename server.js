@@ -15,14 +15,11 @@ const upload = multer({ dest: 'uploads/' });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), 
-async (req, res) => {
+app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (req, res) => {
   const car1Path = req.files['car1'][0].path;
   const car2Path = req.files['car2'][0].path;
-  const car1Name = req.files['car1'][0].originalname.split('.')[0] || 
-'car1';
-  const car2Name = req.files['car2'][0].originalname.split('.')[0] || 
-'car2';
+  const car1Name = req.files['car1'][0].originalname.split('.')[0] || 'car1';
+  const car2Name = req.files['car2'][0].originalname.split('.')[0] || 'car2';
 
   let car1ProcessedPath, car2ProcessedPath;
   try {
@@ -44,16 +41,13 @@ async (req, res) => {
       .resize(car1Width, car1Height)
       .toFormat('png', { quality: 80, compressionLevel: 9 })
       .toBuffer();
-    car1ProcessedPath = path.join(__dirname, 'uploads', 
-`${car1Name}_processed.png`);
+    car1ProcessedPath = path.join(__dirname, 'uploads', `${car1Name}_processed.png`);
     await fs.writeFile(car1ProcessedPath, car1Buffer);
     const car1Stats = await fs.stat(car1ProcessedPath);
     console.log(`Car1 processed size: ${car1Stats.size} bytes`);
-    if (car1Stats.size > 4 * 1024 * 1024) throw new Error('Car1 exceeds 
-4MB');
+    if (car1Stats.size > 4 * 1024 * 1024) throw new Error('Car1 exceeds 4MB');
     const car1Meta = await sharp(car1ProcessedPath).metadata();
-    console.log(`Car1 validated: ${car1Meta.format}, 
-${car1Meta.width}x${car1Meta.height}`);
+    console.log(`Car1 validated: ${car1Meta.format}, ${car1Meta.width}x${car1Meta.height}`);
 
     // Process car2
     console.log('Processing car2...');
@@ -73,16 +67,13 @@ ${car1Meta.width}x${car1Meta.height}`);
       .resize(car2Width, car2Height)
       .toFormat('png', { quality: 80, compressionLevel: 9 })
       .toBuffer();
-    car2ProcessedPath = path.join(__dirname, 'uploads', 
-`${car2Name}_processed.png`);
+    car2ProcessedPath = path.join(__dirname, 'uploads', `${car2Name}_processed.png`);
     await fs.writeFile(car2ProcessedPath, car2Buffer);
     const car2Stats = await fs.stat(car2ProcessedPath);
     console.log(`Car2 processed size: ${car2Stats.size} bytes`);
-    if (car2Stats.size > 4 * 1024 * 1024) throw new Error('Car2 exceeds 
-4MB');
+    if (car2Stats.size > 4 * 1024 * 1024) throw new Error('Car2 exceeds 4MB');
     const car2Meta = await sharp(car2ProcessedPath).metadata();
-    console.log(`Car2 validated: ${car2Meta.format}, 
-${car2Meta.width}x${car2Meta.height}`);
+    console.log(`Car2 validated: ${car2Meta.format}, ${car2Meta.width}x${car2Meta.height}`);
   } catch (error) {
     console.error('Preprocessing error:', error.message);
     await fs.unlink(car1Path).catch(() => {});
@@ -93,14 +84,12 @@ ${car2Meta.width}x${car2Meta.height}`);
   }
 
   try {
-    // Craft prompt for 1024x1792 aspect ratio
+    // Craft prompt for generation
     console.log('Crafting prompt for generation...');
-    const prompt = `A single, photorealistic hybrid car seamlessly fused 
-from unique parts of a ${car1Name} and a ${car2Name}, shown from a perfect 
-side profile with the entire car (front bumper to rear bumper) fully 
-visible, perfectly centered with generous vertical space on a 1024x1792 
-white background, with vibrant colors, detailed styling, and a natural, 
-unified design, ensuring no cropping.`;
+    const prompt = `A single, photorealistic hybrid car seamlessly fused from unique parts of a ${car1Name} and 
+a ${car2Name}, shown from a perfect side profile with the entire car (front bumper to rear bumper) fully 
+visible, perfectly centered with generous space on all sides on a 1024x1792 white background, with vibrant 
+colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
 
     // Send to OpenAI generations endpoint
     console.log('Sending request to OpenAI...');
@@ -109,7 +98,7 @@ unified design, ensuring no cropping.`;
       {
         prompt: prompt,
         n: 1,
-        size: '1024x1792' // Supported horizontal size
+        size: '1024x1792'
       },
       {
         headers: {
@@ -133,14 +122,12 @@ unified design, ensuring no cropping.`;
       // No description as per your request
     });
   } catch (error) {
-    console.error('Fusion error details:', error.response ? 
-error.response.data : error.message);
+    console.error('Fusion error details:', error.response ? error.response.data : error.message);
     await fs.unlink(car1Path).catch(() => {});
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
     await fs.unlink(car2ProcessedPath).catch(() => {});
-    res.status(500).send(`Fusion failed: ${error.response ? 
-error.response.data.message : error.message}`);
+    res.status(500).send(`Fusion failed: ${error.response ? error.response.data.message : error.message}`);
   }
 });
 
