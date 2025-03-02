@@ -11,8 +11,8 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
-      background-color: #000000; /* Black background */
-      color: #ffffff; /* White text for contrast */
+      background-color: #000000;
+      color: #ffffff;
     }
     .upload-container {
       display: flex;
@@ -23,16 +23,16 @@
       display: none;
     }
     .upload-container label {
-      padding: 15px 30px; /* Bigger padding for larger buttons */
-      background-color: #800080; /* Purple color */
+      padding: 15px 30px;
+      background-color: #800080;
       color: white;
       cursor: pointer;
-      border-radius: 10px; /* Modern rounded corners */
-      font-size: 16px; /* Slightly larger font */
-      transition: background-color 0.3s; /* Smooth hover effect */
+      border-radius: 10px;
+      font-size: 16px;
+      transition: background-color 0.3s;
     }
     .upload-container label:hover {
-      background-color: #6A0DAD; /* Darker purple on hover */
+      background-color: #6A0DAD;
     }
     .image-preview {
       max-width: 300px;
@@ -41,21 +41,21 @@
       margin-top: 10px;
     }
     #fuse-button {
-      padding: 15px 30px; /* Bigger padding */
-      background-color: #800080; /* Purple color */
+      padding: 15px 30px;
+      background-color: #800080;
       color: white;
       border: none;
-      border-radius: 10px; /* Modern rounded corners */
-      font-size: 16px; /* Larger font */
+      border-radius: 10px;
+      font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s; /* Smooth hover effect */
+      transition: background-color 0.3s;
     }
     #fuse-button:hover {
-      background-color: #6A0DAD; /* Darker purple on hover */
+      background-color: #6A0DAD;
     }
     #fusion-result {
       margin-top: 20px;
-      color: #ffffff; /* White text */
+      color: #ffffff;
     }
     #fusion-result img {
       max-width: 100%;
@@ -64,7 +64,7 @@
     }
     #status {
       margin-top: 10px;
-      color: #ffffff; /* White text */
+      color: #ffffff;
     }
   </style>
 </head>
@@ -74,12 +74,12 @@
     <div>
       <label for="car1-upload">Upload Car 1 (Front)</label>
       <input type="file" id="car1-upload" accept="image/*">
-      <img id="car1-preview" class="image-preview">
+      <img id="car1-preview" class="image-preview" src="">
     </div>
     <div>
       <label for="car2-upload">Upload Car 2 (Rear)</label>
       <input type="file" id="car2-upload" accept="image/*">
-      <img id="car2-preview" class="image-preview">
+      <img id="car2-preview" class="image-preview" src="">
     </div>
   </div>
   <button id="fuse-button">Fuse Cars</button>
@@ -101,7 +101,9 @@
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (e) => { car1Preview.src = e.target.result; };
+        reader.onload = (e) => {
+          car1Preview.src = e.target.result; // Set preview to data URL
+        };
         reader.readAsDataURL(file);
       }
     });
@@ -110,7 +112,9 @@
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
-        reader.onload = (e) => { car2Preview.src = e.target.result; };
+        reader.onload = (e) => {
+          car2Preview.src = e.target.result; // Set preview to data URL
+        };
         reader.readAsDataURL(file);
       }
     });
@@ -123,15 +127,17 @@
         formData.append('car2', car2Upload.files[0]);
 
         try {
-          const response = await fetch('/fuse', { method: 'POST', body: 
-formData });
+          const response = await fetch('/fuse', {
+            method: 'POST',
+            body: formData
+          });
           if (!response.ok) throw new Error('Server failed');
           const result = await response.json();
-          fusedImage.src = result.image;
+          fusedImage.src = result.image; // Display fused image
           status.textContent = result.description;
         } catch (error) {
-          status.textContent = 'Fusion failed. Check your images or try 
-again.';
+          console.error('Fusion error:', error);
+          status.textContent = `Fusion failed: ${error.message}`;
         }
       } else {
         alert('Please upload both car images.');
