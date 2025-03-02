@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Car Fusion</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link 
+href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" 
+rel="stylesheet">
   <style>
     body {
       font-family: 'Roboto', sans-serif;
@@ -48,7 +50,8 @@
     }
     .upload-container label {
       padding: 15px 30px;
-      background: linear-gradient(45deg, #800080, #6A0DAD); /* Purple gradient */
+      background: linear-gradient(45deg, #800080, #6A0DAD); /* Purple 
+gradient */
       color: white;
       cursor: pointer;
       border-radius: 10px;
@@ -89,11 +92,13 @@
     #fusion-result {
       margin-top: 30px;
       padding: 20px;
-      background: linear-gradient(135deg, #2c2c2c, #3a3a3a); /* Dark gradient placeholder */
+      background: linear-gradient(135deg, #2c2c2c, #3a3a3a); /* Dark 
+gradient */
       border-radius: 15px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       position: relative;
       overflow: hidden;
+      min-height: 500px; /* Ensure space for 1024x1792 */
     }
     #fusion-result::before {
       content: '';
@@ -102,8 +107,9 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: url('https://via.placeholder.com/1024x1280.png?text=Car+Fusion+Placeholder') no-repeat 
-center;
+      background: 
+url('https://via.placeholder.com/1024x1792.png?text=Car+Fusion+Placeholder') 
+no-repeat center;
       background-size: contain;
       opacity: 0.3;
       z-index: 0;
@@ -117,11 +123,6 @@ center;
       background-color: #ffffff;
       position: relative;
       z-index: 1;
-    }
-    #status {
-      margin-top: 15px;
-      font-size: 1.1em;
-      color: #d3a8e8;
     }
     .loading {
       width: 200px;
@@ -167,7 +168,6 @@ center;
         <div class="loading-bar"></div>
       </div>
       <img id="fused-image" src="" alt="Fused Car">
-      <!-- Removed #status -->
     </div>
   </div>
   <script>
@@ -218,7 +218,8 @@ center;
           fusedImage.src = result.image;
         } catch (error) {
           console.error('Fusion error:', error);
-          fusedImage.src = 'https://via.placeholder.com/1024x1280.png?text=Fusion+Failed';
+          fusedImage.src = 
+'https://via.placeholder.com/1024x1792.png?text=Fusion+Failed';
         } finally {
           loading.style.display = 'none'; // Hide loading bar
         }
