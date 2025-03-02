@@ -94,7 +94,7 @@
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       position: relative;
       overflow: hidden;
-      min-height: 400px; /* Adjusted for 1024x1024 */
+      min-height: 800px; /* Adjusted for 1024x1792 */
     }
     #fusion-result::before {
       content: '';
@@ -213,7 +213,7 @@
           fusedImage.src = result.image;
         } catch (error) {
           console.error('Fusion error:', error);
-          fusedImage.src = 'https://via.placeholder.com/1024x1024.png?text=Fusion+Failed';
+          fusedImage.src = 'https://via.placeholder.com/1024x1792.png?text=Fusion+Failed';
         } finally {
           loading.style.display = 'none'; // Hide loading bar
         }
