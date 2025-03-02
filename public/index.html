@@ -89,9 +89,24 @@
     #fusion-result {
       margin-top: 30px;
       padding: 20px;
-      background: rgba(255, 255, 255, 0.05);
+      background: linear-gradient(135deg, #2c2c2c, #3a3a3a); /* Dark gradient placeholder */
       border-radius: 15px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    #fusion-result::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('https://via.placeholder.com/1024x1280.png?text=Car+Fusion+Placeholder') no-repeat 
+center;
+      background-size: contain;
+      opacity: 0.3;
+      z-index: 0;
     }
     #fusion-result img {
       max-width: 100%;
@@ -100,13 +115,14 @@
       border-radius: 10px;
       object-fit: contain;
       background-color: #ffffff;
+      position: relative;
+      z-index: 1;
     }
     #status {
       margin-top: 15px;
       font-size: 1.1em;
       color: #d3a8e8;
     }
-    /* Loading bar animation */
     .loading {
       width: 200px;
       height: 20px;
@@ -151,7 +167,7 @@
         <div class="loading-bar"></div>
       </div>
       <img id="fused-image" src="" alt="Fused Car">
-      <p id="status"></p>
+      <!-- Removed #status -->
     </div>
   </div>
   <script>
@@ -161,7 +177,6 @@
     const car2Preview = document.getElementById('car2-preview');
     const fuseButton = document.getElementById('fuse-button');
     const fusedImage = document.getElementById('fused-image');
-    const status = document.getElementById('status');
     const loading = document.getElementById('loading');
 
     car1Upload.addEventListener('change', (event) => {
@@ -188,7 +203,6 @@
 
     fuseButton.addEventListener('click', async () => {
       if (car1Upload.files[0] && car2Upload.files[0]) {
-        status.textContent = '';
         loading.style.display = 'block'; // Show loading bar
         try {
           const formData = new FormData();
@@ -202,10 +216,9 @@
           if (!response.ok) throw new Error('Server failed');
           const result = await response.json();
           fusedImage.src = result.image;
-          status.textContent = result.description;
         } catch (error) {
           console.error('Fusion error:', error);
-          status.textContent = `Fusion failed: ${error.message}`;
+          fusedImage.src = 'https://via.placeholder.com/1024x1280.png?text=Fusion+Failed';
         } finally {
           loading.style.display = 'none'; // Hide loading bar
         }
