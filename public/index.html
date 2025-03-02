@@ -13,7 +13,7 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background-color: #1a1a1a; /* Dark gray background for less strain */
+      background-color: #1a1a1a; /* Dark gray background */
       color: #ffffff;
       padding: 20px;
     }
@@ -106,16 +106,15 @@
       font-size: 1.1em;
       color: #d3a8e8;
     }
-    /* Loading animation */
+    /* Spinning car wheel animation */
     .loading {
-      border: 4px solid #d3a8e8;
-      border-top: 4px solid #800080;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
+      width: 60px;
+      height: 60px;
+      margin: 20px auto;
       display: none;
+      background: url('https://i.imgur.com/8k0h2qU.png') no-repeat center; /* Car wheel image */
+      background-size: contain;
+      animation: spin 1s linear infinite;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
