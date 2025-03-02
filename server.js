@@ -45,9 +45,10 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
     car1ProcessedPath = path.join(__dirname, 'uploads', `${car1Name}_processed.png`);
     await fs.writeFile(car1ProcessedPath, car1Buffer);
     const car1Stats = await fs.stat(car1ProcessedPath);
-    if (car1Stats.size > 4 * 1024 * 1024) throw new Error('Car1 exceeds 4MB');
-    await sharp(car1ProcessedPath).metadata(); // Validate
     console.log(`Car1 processed size: ${car1Stats.size} bytes`);
+    if (car1Stats.size > 4 * 1024 * 1024) throw new Error('Car1 exceeds 4MB');
+    const car1Meta = await sharp(car1ProcessedPath).metadata();
+    console.log(`Car1 validated: ${car1Meta.format}, ${car1Meta.width}x${car1Meta.height}`);
 
     // Process car2
     console.log('Processing car2...');
@@ -70,20 +71,21 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
     car2ProcessedPath = path.join(__dirname, 'uploads', `${car2Name}_processed.png`);
     await fs.writeFile(car2ProcessedPath, car2Buffer);
     const car2Stats = await fs.stat(car2ProcessedPath);
-    if (car2Stats.size > 4 * 1024 * 1024) throw new Error('Car2 exceeds 4MB');
-    await sharp(car2ProcessedPath).metadata(); // Validate
     console.log(`Car2 processed size: ${car2Stats.size} bytes`);
+    if (car2Stats.size > 4 * 1024 * 1024) throw new Error('Car2 exceeds 4MB');
+    const car2Meta = await sharp(car2ProcessedPath).metadata();
+    console.log(`Car2 validated: ${car2Meta.format}, ${car2Meta.width}x${car2Meta.height}`);
 
     // Create composite base image
     console.log('Creating base image...');
     const car1Image = await fs.readFile(car1ProcessedPath);
     const car2Image = await fs.readFile(car2ProcessedPath);
-    const car1Meta = await sharp(car1Image).metadata();
-    const car2Meta = await sharp(car2Image).metadata();
+    const car1MetaCheck = await sharp(car1Image).metadata();
+    const car2MetaCheck = await sharp(car2Image).metadata();
     outputBasePath = path.join(__dirname, 'uploads', 'base.png');
     const baseWidth = 1024;
     const baseHeight = 1024;
-    const baseBuffer = await sharp({
+    baseBuffer = await sharp({
       create: {
         width: baseWidth,
         height: baseHeight,
@@ -92,18 +94,19 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
       }
     })
       .composite([
-        { input: car1Image, top: Math.round((baseHeight - car1Meta.height) / 2), left: 
-Math.round((baseWidth - car1Meta.width) / 2) },
-        { input: car2Image, top: Math.round((baseHeight - car2Meta.height) / 2), left: 
-Math.round((baseWidth - car2Meta.width) / 2) }
+        { input: car1Image, top: Math.round((baseHeight - car1MetaCheck.height) / 2), left: 
+Math.round((baseWidth - car1MetaCheck.width) / 2) },
+        { input: car2Image, top: Math.round((baseHeight - car2MetaCheck.height) / 2), left: 
+Math.round((baseWidth - car2MetaCheck.width) / 2) }
       ])
-      .toFormat('png', { quality: 80, compressionLevel: 9 })
+      .toFormat('png', { quality: 80, compressionLevel: 9, adaptiveFiltering: false })
       .toBuffer();
     await fs.writeFile(outputBasePath, baseBuffer);
     const outputStats = await fs.stat(outputBasePath);
+    console.log(`Base image size: ${outputStats.size} bytes`);
     if (outputStats.size > 4 * 1024 * 1024) throw new Error('Base image exceeds 4MB');
-    await sharp(outputBasePath).metadata(); // Validate
-    console.log(`Base image size: ${outputStats.size} imagesbytes`);
+    const baseMeta = await sharp(outputBasePath).metadata();
+    console.log(`Base image revalidated: ${baseMeta.format}, ${baseMeta.width}x${baseMeta.height}`);
 
     // Create empty mask
     outputMaskPath = path.join(__dirname, 'uploads', 'mask.png');
@@ -129,11 +132,13 @@ background, with vibrant colors, detailed styling, and a natural, unified design
     // Send to OpenAI
     console.log('Sending request to OpenAI...');
     const formData = new FormData();
-    formData.append('image', await fs.readFile(outputBasePath), {
+    const baseImageBuffer = await fs.readFile(outputBasePath);
+    formData.append('image', baseImageBuffer, {
       contentType: 'image/png',
       filename: 'base.png'
     });
-    formData.append('mask', await fs.readFile(outputMaskPath), {
+    const maskBuffer = await fs.readFile(outputMaskPath);
+    formData.append('mask', maskBuffer, {
       contentType: 'image/png',
       filename: 'mask.png'
     });
@@ -150,7 +155,8 @@ background, with vibrant colors, detailed styling, and a natural, unified design
           ...formData.getHeaders()
         },
         maxContentLength: Infinity,
-        maxBodyLength: Infinity
+        maxBodyLength: Infinity,
+        timeout: 30000 // 30-second timeout
       }
     );
 
@@ -170,7 +176,7 @@ background, with vibrant colors, detailed styling, and a natural, unified design
 visible and centered`
     });
   } catch (error) {
-    console.error('Fusion error:', error.response ? error.response.data : error.message);
+    console.error('Fusion error details:', error.response ? error.response.data : error.message);
     await fs.unlink(car1Path).catch(() => {});
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
