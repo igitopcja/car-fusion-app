@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Car Fusion</title>
-  <link 
-href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" 
-rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Roboto', sans-serif;
@@ -50,8 +48,7 @@ rel="stylesheet">
     }
     .upload-container label {
       padding: 15px 30px;
-      background: linear-gradient(45deg, #800080, #6A0DAD); /* Purple 
-gradient */
+      background: linear-gradient(45deg, #800080, #6A0DAD); /* Purple gradient */
       color: white;
       cursor: pointer;
       border-radius: 10px;
@@ -106,9 +103,7 @@ gradient */
       left: 0;
       width: 100%;
       height: 100%;
-      background: 
-url('https://cdn.pixabay.com/photo/2016/11/19/15/46/car-1838950_1280.png') 
-no-repeat center;
+      background: url('https://cdn.pixabay.com/photo/2016/11/19/15/46/car-1838950_1280.png') no-repeat center;
       background-size: contain;
       opacity: 0.2;
       z-index: 0;
@@ -218,8 +213,7 @@ no-repeat center;
           fusedImage.src = result.image;
         } catch (error) {
           console.error('Fusion error:', error);
-          fusedImage.src = 
-'https://via.placeholder.com/1024x1024.png?text=Fusion+Failed';
+          fusedImage.src = 'https://via.placeholder.com/1024x1024.png?text=Fusion+Failed';
         } finally {
           loading.style.display = 'none'; // Hide loading bar
         }
