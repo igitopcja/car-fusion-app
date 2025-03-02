@@ -84,12 +84,12 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
   }
 
   try {
-    // Craft prompt for 1024x1024 with horizontal emphasis
+    // Craft prompt for 1024x1792 with horizontal emphasis
     console.log('Crafting prompt for generation...');
     const prompt = `A single, photorealistic hybrid car seamlessly fused from unique parts of a ${car1Name} and 
 a ${car2Name}, shown from a perfect side profile with the entire car (front bumper to rear bumper) fully 
-visible, horizontally aligned and centered with generous space on a 1024x1024 white background, with vibrant 
-colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
+visible, horizontally stretched and centered with generous vertical space on a 1024x1792 white background, with 
+vibrant colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
 
     // Send to OpenAI generations endpoint
     console.log('Sending request to OpenAI...');
@@ -98,7 +98,7 @@ colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
       {
         prompt: prompt,
         n: 1,
-        size: '1024x1024' // Reverted to supported size
+        size: '1024x1792' // Horizontal supported size
       },
       {
         headers: {
