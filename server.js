@@ -4,7 +4,6 @@ const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs').promises;
 const path = require('path');
-const FormData = require('form-data');
 const app = express();
 const port = 3000;
 
@@ -22,7 +21,7 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
   const car1Name = req.files['car1'][0].originalname.split('.')[0] || 'car1';
   const car2Name = req.files['car2'][0].originalname.split('.')[0] || 'car2';
 
-  let car1ProcessedPath, car2ProcessedPath, outputBasePath, outputMaskPath;
+  let car1ProcessedPath, car2ProcessedPath;
   try {
     // Process car1
     console.log('Processing car1...');
@@ -75,88 +74,38 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
     if (car2Stats.size > 4 * 1024 * 1024) throw new Error('Car2 exceeds 4MB');
     const car2Meta = await sharp(car2ProcessedPath).metadata();
     console.log(`Car2 validated: ${car2Meta.format}, ${car2Meta.width}x${car2Meta.height}`);
-
-    // Create composite base image
-    console.log('Creating base image...');
-    const car1Image = await fs.readFile(car1ProcessedPath);
-    const car2Image = await fs.readFile(car2ProcessedPath);
-    const car1MetaCheck = await sharp(car1Image).metadata();
-    const car2MetaCheck = await sharp(car2Image).metadata();
-    outputBasePath = path.join(__dirname, 'uploads', 'base.png');
-    const baseWidth = 1024;
-    const baseHeight = 1024;
-    baseBuffer = await sharp({
-      create: {
-        width: baseWidth,
-        height: baseHeight,
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 1 }
-      }
-    })
-      .composite([
-        { input: car1Image, top: Math.round((baseHeight - car1MetaCheck.height) / 2), left: 
-Math.round((baseWidth - car1MetaCheck.width) / 2) },
-        { input: car2Image, top: Math.round((baseHeight - car2MetaCheck.height) / 2), left: 
-Math.round((baseWidth - car2MetaCheck.width) / 2) }
-      ])
-      .toFormat('png', { quality: 80, compressionLevel: 9, adaptiveFiltering: false })
-      .toBuffer();
-    await fs.writeFile(outputBasePath, baseBuffer);
-    const outputStats = await fs.stat(outputBasePath);
-    console.log(`Base image size: ${outputStats.size} bytes`);
-    if (outputStats.size > 4 * 1024 * 1024) throw new Error('Base image exceeds 4MB');
-    const baseMeta = await sharp(outputBasePath).metadata();
-    console.log(`Base image revalidated: ${baseMeta.format}, ${baseMeta.width}x${baseMeta.height}`);
-
-    // Create empty mask
-    outputMaskPath = path.join(__dirname, 'uploads', 'mask.png');
-    await fs.writeFile(outputMaskPath, Buffer.alloc(baseWidth * baseHeight * 4, 0));
   } catch (error) {
     console.error('Preprocessing error:', error.message);
     await fs.unlink(car1Path).catch(() => {});
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
     await fs.unlink(car2ProcessedPath).catch(() => {});
-    await fs.unlink(outputBasePath).catch(() => {});
-    await fs.unlink(outputMaskPath).catch(() => {});
     return res.status(400).send(`Preprocessing failed: ${error.message}`);
   }
 
   try {
-    // Prompt for fusion
+    // Craft prompt based on uploaded images
+    console.log('Crafting prompt for generation...');
     const prompt = `A single, photorealistic hybrid car seamlessly fused from unique parts of a 
 ${car1Name} and a ${car2Name}, shown from a perfect side profile with the entire car (front bumper to rear 
 bumper) fully visible, perfectly centered with generous space on all sides on a 1024x1024 white 
 background, with vibrant colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
 
-    // Send to OpenAI
+    // Send to OpenAI generations endpoint
     console.log('Sending request to OpenAI...');
-    const formData = new FormData();
-    const baseImageBuffer = await fs.readFile(outputBasePath);
-    formData.append('image', baseImageBuffer, {
-      contentType: 'image/png',
-      filename: 'base.png'
-    });
-    const maskBuffer = await fs.readFile(outputMaskPath);
-    formData.append('mask', maskBuffer, {
-      contentType: 'image/png',
-      filename: 'mask.png'
-    });
-    formData.append('prompt', prompt);
-    formData.append('n', '1');
-    formData.append('size', '1024x1024');
-
     const response = await axios.post(
-      'https://api.openai.com/v1/images/edits',
-      formData,
+      'https://api.openai.com/v1/images/generations',
+      {
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024'
+      },
       {
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          ...formData.getHeaders()
+          'Content-Type': 'application/json'
         },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-        timeout: 30000 // 30-second timeout
+        timeout: 30000
       }
     );
 
@@ -167,8 +116,6 @@ background, with vibrant colors, detailed styling, and a natural, unified design
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
     await fs.unlink(car2ProcessedPath).catch(() => {});
-    await fs.unlink(outputBasePath).catch(() => {});
-    await fs.unlink(outputMaskPath).catch(() => {});
 
     res.json({
       image: fusedImage,
@@ -181,8 +128,6 @@ visible and centered`
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
     await fs.unlink(car2ProcessedPath).catch(() => {});
-    await fs.unlink(outputBasePath).catch(() => {});
-    await fs.unlink(outputMaskPath).catch(() => {});
     res.status(500).send(`Fusion failed: ${error.response ? error.response.data.message : 
 error.message}`);
   }
