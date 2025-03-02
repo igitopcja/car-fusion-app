@@ -84,12 +84,12 @@ app.post('/fuse', upload.fields([{ name: 'car1' }, { name: 'car2' }]), async (re
   }
 
   try {
-    // Craft prompt based on uploaded images
+    // Craft prompt for 4:5 aspect ratio
     console.log('Crafting prompt for generation...');
-    const prompt = `A single, photorealistic hybrid car seamlessly fused from unique parts of a 
-${car1Name} and a ${car2Name}, shown from a perfect side profile with the entire car (front bumper to rear 
-bumper) fully visible, perfectly centered with generous space on all sides on a 1024x1024 white 
-background, with vibrant colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
+    const prompt = `A single, photorealistic hybrid car seamlessly fused from unique parts of a ${car1Name} and 
+a ${car2Name}, shown from a perfect side profile with the entire car (front bumper to rear bumper) fully 
+visible, perfectly centered with generous space on all sides on a 1024x1280 white background (4:5 aspect 
+ratio), with vibrant colors, detailed styling, and a natural, unified design, ensuring no cropping.`;
 
     // Send to OpenAI generations endpoint
     console.log('Sending request to OpenAI...');
@@ -98,7 +98,7 @@ background, with vibrant colors, detailed styling, and a natural, unified design
       {
         prompt: prompt,
         n: 1,
-        size: '1024x1024'
+        size: '1024x1280' // 4:5 aspect ratio
       },
       {
         headers: {
@@ -118,9 +118,8 @@ background, with vibrant colors, detailed styling, and a natural, unified design
     await fs.unlink(car2ProcessedPath).catch(() => {});
 
     res.json({
-      image: fusedImage,
-      description: `Generated fusion of ${car1Name} and ${car2Name} into a single hybrid car, fully 
-visible and centered`
+      image: fusedImage
+      // Removed description to meet your request
     });
   } catch (error) {
     console.error('Fusion error details:', error.response ? error.response.data : error.message);
@@ -128,8 +127,7 @@ visible and centered`
     await fs.unlink(car2Path).catch(() => {});
     await fs.unlink(car1ProcessedPath).catch(() => {});
     await fs.unlink(car2ProcessedPath).catch(() => {});
-    res.status(500).send(`Fusion failed: ${error.response ? error.response.data.message : 
-error.message}`);
+    res.status(500).send(`Fusion failed: ${error.response ? error.response.data.message : error.message}`);
   }
 });
 
