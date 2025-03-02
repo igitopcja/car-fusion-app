@@ -106,19 +106,26 @@
       font-size: 1.1em;
       color: #d3a8e8;
     }
-    /* Spinning car wheel animation */
+    /* Loading bar animation */
     .loading {
-      width: 80px; /* Adjusted size for better visibility */
-      height: 80px;
+      width: 200px;
+      height: 20px;
+      border: 2px solid #d3a8e8;
+      border-radius: 10px;
+      overflow: hidden;
       margin: 20px auto;
       display: none;
-      background: url('/wheel.png') no-repeat center; /* Local wheel image */
-      background-size: contain;
-      animation: spin 1s linear infinite;
+      background-color: #333;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .loading-bar {
+      width: 0;
+      height: 100%;
+      background: linear-gradient(45deg, #800080, #6A0DAD);
+      animation: load 2s linear infinite;
+    }
+    @keyframes load {
+      0% { width: 0; }
+      100% { width: 100%; }
     }
   </style>
 </head>
@@ -140,7 +147,9 @@
     <button id="fuse-button">Fuse Cars</button>
     <div id="fusion-result">
       <h2>Fusion Result</h2>
-      <div class="loading" id="loading"></div>
+      <div class="loading" id="loading">
+        <div class="loading-bar"></div>
+      </div>
       <img id="fused-image" src="" alt="Fused Car">
       <p id="status"></p>
     </div>
@@ -180,12 +189,12 @@
     fuseButton.addEventListener('click', async () => {
       if (car1Upload.files[0] && car2Upload.files[0]) {
         status.textContent = '';
-        loading.style.display = 'block'; // Show loading animation
-        const formData = new FormData();
-        formData.append('car1', car1Upload.files[0]);
-        formData.append('car2', car2Upload.files[0]);
-
+        loading.style.display = 'block'; // Show loading bar
         try {
+          const formData = new FormData();
+          formData.append('car1', car1Upload.files[0]);
+          formData.append('car2', car2Upload.files[0]);
+
           const response = await fetch('/fuse', {
             method: 'POST',
             body: formData
@@ -198,7 +207,7 @@
           console.error('Fusion error:', error);
           status.textContent = `Fusion failed: ${error.message}`;
         } finally {
-          loading.style.display = 'none'; // Hide loading animation
+          loading.style.display = 'none'; // Hide loading bar
         }
       } else {
         alert('Please upload both car images.');
