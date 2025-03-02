@@ -27,7 +27,7 @@
       max-width: 1200px;
     }
     h1 {
-      font-size: 2.5em;
+      font-size: 3.5em; /* Increased from 2.5em to 3.5em for bigger title */
       margin-bottom: 20px;
       color: #d3a8e8; /* Soft purple for title */
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
@@ -47,12 +47,12 @@
       align-items: center;
     }
     .upload-container label {
-      padding: 15px 30px;
+      padding: 20px 40px; /* Increased padding for bigger buttons */
       background: linear-gradient(45deg, #800080, #6A0DAD); /* Purple gradient */
       color: white;
       cursor: pointer;
       border-radius: 10px;
-      font-size: 1.1em;
+      font-size: 1.3em; /* Increased font size for bigger text */
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s, box-shadow 0.2s;
     }
@@ -71,12 +71,12 @@
       background-color: #ffffff;
     }
     #fuse-button {
-      padding: 15px 40px;
+      padding: 20px 40px; /* Increased padding for bigger button */
       background: linear-gradient(45deg, #800080, #6A0DAD);
       color: white;
       border: none;
       border-radius: 10px;
-      font-size: 1.2em;
+      font-size: 1.3em; /* Increased font size for bigger text */
       cursor: pointer;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s, box-shadow 0.2s;
@@ -146,12 +146,12 @@
     <h1>Car Fusion</h1>
     <div class="upload-container">
       <div class="upload-box">
-        <label for="car1-upload">Upload Car 1 (Front)</label>
+        <label for="car1-upload">Upload Car 1</label>
         <input type="file" id="car1-upload" accept="image/*">
         <img id="car1-preview" class="image-preview" src="">
       </div>
       <div class="upload-box">
-        <label for="car2-upload">Upload Car 2 (Rear)</label>
+        <label for="car2-upload">Upload Car 2</label>
         <input type="file" id="car2-upload" accept="image/*">
         <img id="car2-preview" class="image-preview" src="">
       </div>
